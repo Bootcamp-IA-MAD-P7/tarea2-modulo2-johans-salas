@@ -209,11 +209,100 @@ MAE = (1/n) · Σ|yᵢ - ŷᵢ|
 
 **7. ¿Qué son los residuos y para qué sirve analizarlos?** ¿Qué indica un residuo cercano a 0? ¿Qué patrón en los residuos revelaría que el modelo no es adecuado?
 
+Un **residuo** es la diferencia entre el valor real y el valor predicho por el modelo:
+
+```
+eᵢ = yᵢ - ŷᵢ
+```
+
+**¿Qué indica un residuo cercano a 0?**
+
+Un residuo **cercano a 0** indica que el modelo predijo muy bien ese dato particular. Si todos los residuos son pequeños, el modelo tiene buen ajuste.
+
+**¿Por qué analizar los residuos?**
+
+El análisis de residuos permite verificar los supuestos del modelo y detectar problemas que las métricas globales (como R²) pueden ocultar.
+
+**Patrones en residuos que revelan problemas:**
+
+| Patrón observado | Problema que indica |
+|---|---|
+| Residuos con forma de **curva o arco** | Relación no lineal → el modelo lineal no es adecuado |
+| Residuos con **dispersión creciente** (embudo) | Heterocedasticidad → violación del supuesto de varianza constante |
+| Residuos con **patrón cíclico** | Dependencia temporal → los errores no son independientes |
+| **Outliers extremos** en residuos | Datos atípicos o errores en los datos |
+
+Un buen modelo debería mostrar residuos **distribuidos aleatoriamente** alrededor de 0, sin ningún patrón.
 
 ---
 
 **8. ¿Qué es el overfitting y cómo se detecta comparando R² en train vs. test?**
 
+El **overfitting (sobreajuste)** ocurre cuando el modelo aprende demasiado bien los datos de entrenamiento, incluyendo su ruido y particularidades, y pierde capacidad de generalizar a datos nuevos.
+
+Es como un estudiante que memoriza las respuestas del examen de práctica pero no entiende los conceptos: falla en el examen real.
+
+**¿Cómo se detecta comparando R² en train vs. test?**
+
+```
+R²_train = 0.97   ← El modelo predice casi perfectamente los datos de entrenamiento
+R²_test  = 0.54   ← Pero falla mucho en datos nuevos
+```
+
+Si hay una **gran diferencia** entre R²_train y R²_test:
+- **R²_train alto + R²_test bajo** → **Overfitting** ✗
+- **R²_train alto + R²_test también alto** → Buen modelo ✓
+- **Ambos bajos** → **Underfitting** (el modelo es demasiado simple) ✗
+
+**¿Cómo combatir el overfitting?**
+
+- Usar más datos de entrenamiento.
+- Simplificar el modelo (reducir features).
+- Usar regularización (Ridge, Lasso).
+- Usar validación cruzada.
+
 ---
 
 **9. ¿Qué es la validación cruzada (cross-validation) y qué ventaja ofrece frente a una sola división train/test?** 
+
+La **validación cruzada** (cross-validation) es una técnica que divide el dataset en múltiples partes para evaluar el modelo de manera más robusta que una sola división train/test.
+
+**K-Fold Cross-Validation (la más común):**
+
+El proceso con **K = 5** funciona así:
+
+```
+Datos completos: [——————————————————————————]
+
+Fold 1: [TEST][train][train][train][train]
+Fold 2: [train][TEST][train][train][train]
+Fold 3: [train][train][TEST][train][train]
+Fold 4: [train][train][train][TEST][train]
+Fold 5: [train][train][train][train][TEST]
+```
+
+1. Se divide el dataset en K partes iguales (folds).
+2. En cada iteración, un fold es el test y los demás son el train.
+3. Se repite K veces → se obtienen K métricas de evaluación.
+4. El resultado final es el **promedio** de las K métricas.
+
+```python
+from sklearn.model_selection import cross_val_score
+
+scores = cross_val_score(model, X, y, cv=5, scoring='r2')
+print(f"R² medio: {scores.mean():.3f} ± {scores.std():.3f}")
+```
+
+**Ventajas frente a una sola división train/test:**
+
+| Aspecto | Train/Test simple | Cross-Validation |
+|---|---|---|
+| **Uso de los datos** | Solo una partición | Todos los datos se usan para train Y test |
+| **Varianza del resultado** | Alta (depende del split aleatorio) | Baja (promedio de K evaluaciones) |
+| **Fiabilidad** | Puede ser optimista o pesimista por azar | Estimación más robusta y realista |
+| **Detección de overfitting** | Limitada | Más fiable |
+| **Coste computacional** | Bajo | K veces mayor |
+
+**En resumen:**
+
+La validación cruzada es especialmente útil cuando se tienen **pocos datos** y no se puede permitir perder un 20% solo para test. Proporciona una estimación más honesta del rendimiento real del modelo.
